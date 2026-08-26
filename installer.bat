@@ -44,18 +44,13 @@ if exist "%TARGET_DIR%\Among Us.exe" (
 
 :: 3. Download Latest Mod Repo Archive from GitHub
 echo [+] Fetching latest mod files from GitHub...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "^
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; ^
-    try { ^
-        (New-Object System.Net.WebClient).DownloadFile('%ZIP_URL%', '%TEMP_ZIP%'); ^
-    } catch { ^
-        Write-Host '[!] ERROR: Failed to download update from GitHub.' -ForegroundColor Red; ^
-        exit 1; ^
-    }"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object System.Net.WebClient).DownloadFile('%ZIP_URL%', '%TEMP_ZIP%')"
 
-if %ERRORLEVEL% NEQ 0 (
+if not exist "%TEMP_ZIP%" (
+    echo [!] ERROR: Download failed.
+    echo     Check your internet connection, make sure your GitHub repo is set to PUBLIC,
+    echo     and ensure lines 12 ^& 13 match your GitHub details.
     echo.
-    echo Please check your internet connection or verify your GitHub repository settings.
     pause
     exit
 )
@@ -64,8 +59,7 @@ if %ERRORLEVEL% NEQ 0 (
 echo [+] Extracting and injecting mod files...
 if exist "%TEMP_EXTRACT%" rmdir /s /q "%TEMP_EXTRACT%"
 
-powershell -NoProfile -ExecutionPolicy Bypass -Command "^
-    Expand-Archive -Path '%TEMP_ZIP%' -DestinationPath '%TEMP_EXTRACT%' -Force"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Expand-Archive -Path '%TEMP_ZIP%' -DestinationPath '%TEMP_EXTRACT%' -Force"
 
 set "MOD_SOURCE=%TEMP_EXTRACT%\%GITHUB_REPO%-main\ModFiles"
 
@@ -78,8 +72,8 @@ if exist "%MOD_SOURCE%" (
 )
 
 :: Clean up temporary installer files
-del "%TEMP_ZIP%" >nul 2>&1
-rmdir /s /q "%TEMP_EXTRACT%" >nul 2>&1
+if exist "%TEMP_ZIP%" del /f /q "%TEMP_ZIP%" >nul 2>&1
+if exist "%TEMP_EXTRACT%" rmdir /s /q "%TEMP_EXTRACT%" >nul 2>&1
 
 echo.
 
